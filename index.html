@@ -11,6 +11,7 @@
     table{border-collapse:collapse;width:100%;margin-top:12px}
     th,td{border:1px solid #ddd;padding:6px 8px;text-align:center;font-size:14px}
     th{background:#f5f5f5}
+    .hint{color:#b45309;background:#fff7ed;border:1px solid #fed7aa;padding:10px;border-radius:8px;margin-top:12px}
   </style>
 </head>
 <body>
@@ -31,36 +32,59 @@
   <tbody></tbody>
 </table>
 
+<div id="fetch-error" class="hint" style="display:none"></div>
+
 <script>
 (async () => {
-  const resp = await fetch('marksix_updated_200pair_analysis.xlsx');
-  const buf = await resp.arrayBuffer();
-  const wb = XLSX.read(buf, { type: 'array' });
+  const status = document.getElementById('last-update');
+  const errorBox = document.getElementById('fetch-error');
 
-  const pairSheet = wb.Sheets['同期號碼組合（含特別號）'];
-  const metaSheet = wb.Sheets['更新資訊'];
+  try {
+    const resp = await fetch('marksix_updated_200pair_analysis.xlsx', { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
-  if (metaSheet) {
-    const meta = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
-    const row = meta.find(r => r[0] === '最後更新時間（HKT)');
-    if (row) {
-      document.getElementById('last-update').textContent = `最後更新時間（香港時間）：${row[1]}`;
+    const buf = await resp.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+
+    const pairSheet = wb.Sheets['同期號碼組合（含特別號）'];
+    const metaSheet = wb.Sheets['更新資訊'];
+
+    if (!pairSheet) throw new Error('Missing sheet: 同期號碼組合（含特別號）');
+
+    // 顯示更新時間（HKT）
+    if (metaSheet) {
+      const meta = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
+      const row = meta.find(r => r[0] === '最後更新時間（HKT)');
+      status.textContent = row ? `最後更新時間（香港時間）：${row[1]}` : '資料已載入（未提供更新時間）';
+    } else {
+      status.textContent = '資料已載入';
     }
-  }
 
-  const pairs = XLSX.utils.sheet_to_json(pairSheet);
-  const tbody = document.querySelector('#pair-table tbody');
-  tbody.innerHTML = '';
+    const pairs = XLSX.utils.sheet_to_json(pairSheet);
+    const tbody = document.querySelector('#pair-table tbody');
+    tbody.innerHTML = '';
 
-  pairs.forEach((r, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i + 1}</td>
-      <td>${r['同期兩個號碼（含特別號｜最近200期）']}</td>
-      <td>${r['出現次數']}</td>
+    pairs.forEach((r, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${r['同期兩個號碼（含特別號｜最近200期）']}</td>
+        <td>${r['出現次數']}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    status.textContent = '⚠️ 無法載入資料';
+    errorBox.style.display = 'block';
+    errorBox.innerHTML = `
+      <b>無法載入 Excel 檔案</b><br/>
+      請確認：<br/>
+      1️⃣ 以 <b>HTTP</b> 方式開啟（GitHub Pages 或 http://localhost）<br/>
+      2️⃣ <code>marksix_updated_200pair_analysis.xlsx</code> 與 <code>index.html</code> 在同一層<br/>
     `;
-    tbody.appendChild(tr);
-  });
+  }
 })();
 </script>
 
