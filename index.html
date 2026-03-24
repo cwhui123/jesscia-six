@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
   <meta charset="utf-8" />
-  <title>六合彩分析面板（200期 Excel）</title>
+  <title>六合彩分析面板（Excel 驅動）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
   <style>
@@ -51,11 +51,10 @@
 
     if (!pairSheet) throw new Error('Missing sheet: 同期號碼組合（含特別號）');
 
-    // 顯示更新時間（HKT）
     if (metaSheet) {
       const meta = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
       const row = meta.find(r => r[0] === '最後更新時間（HKT)');
-      status.textContent = row ? `最後更新時間（香港時間）：${row[1]}` : '資料已載入（未提供更新時間）';
+      status.textContent = row ? `最後更新時間（香港時間）：${row[1]}` : '資料已載入';
     } else {
       status.textContent = '資料已載入';
     }
