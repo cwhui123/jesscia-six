@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8" />
+  <title>六合彩分析面板（200期 Excel）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif; margin: 24px; }
+    h1,h2{margin-top:24px}
+    table{border-collapse:collapse;width:100%;margin-top:12px}
+    th,td{border:1px solid #ddd;padding:6px 8px;text-align:center;font-size:14px}
+    th{background:#f5f5f5}
+  </style>
+</head>
+<body>
+
+<h1>六合彩分析面板</h1>
+<p id="last-update">資料載入中…</p>
+
+<h2>同期號碼組合（含特別號｜最近200期）</h2>
+
+<table id="pair-table">
+  <thead>
+    <tr>
+      <th>排行</th>
+      <th>號碼對</th>
+      <th>出現次數</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+(async () => {
+  const resp = await fetch('marksix_updated_200pair_analysis.xlsx');
+  const buf = await resp.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+
+  const pairSheet = wb.Sheets['同期號碼組合（含特別號）'];
+  const metaSheet = wb.Sheets['更新資訊'];
+
+  if (metaSheet) {
+    const meta = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
+    const row = meta.find(r => r[0] === '最後更新時間（HKT)');
+    if (row) {
+      document.getElementById('last-update').textContent = `最後更新時間（香港時間）：${row[1]}`;
+    }
+  }
+
+  const pairs = XLSX.utils.sheet_to_json(pairSheet);
+  const tbody = document.querySelector('#pair-table tbody');
+  tbody.innerHTML = '';
+
+  pairs.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${r['同期兩個號碼（含特別號｜最近200期）']}</td>
+      <td>${r['出現次數']}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+})();
+</script>
+
+</body>
+</html>
